@@ -19,19 +19,10 @@ def encrypt(plaintext, password, rounds):
         plaintext=plaintext+random.randbytes(1).hex()
     while(len(plaintext)>64):
         plaintext=plaintext[:64]
-    plainmesh = [[plaintext[:8]],
-                [plaintext[8:16]],
-                [plaintext[16:24]],
-                [plaintext[24:32]],
-                [plaintext[32:40]],
-                [plaintext[40:48]],
-                [plaintext[48:56]],
-                [plaintext[56:]],]
+    plainmesh = [list(plaintext[i*8:(i+1)*8]) for i in range(8)]
     for i in range(8):
         for j in range(8):
-            print(plaintext[i,j])
-            #loop through plaintext and xor with row then column of passmesh
-            
+            print(plainmesh[i][j])
     return "hello7cd5139d4a0a8e04a8ed6261d94124f34841e3ce0c8cf4c29467533acdc"
 
     

@@ -1,11 +1,11 @@
 .DEFAULT_GOAL := generate
 say_hello:
 	@echo "Hello World"
-run:
+test:
 	make clean
 	make generate
 	clear
-	./main
+	./main -r
 generate:
 	make clean
 	gcc main.c -o main -lm -lcrypto

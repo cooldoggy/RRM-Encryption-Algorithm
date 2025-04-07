@@ -1,31 +1,42 @@
 from hashlib import sha256
+from utils import meshmaker, xorutil
 import random
-def encrypt(plaintext, password, rounds):
+
+def cryptoround(plaintext, password, rounds):
+    rounds=0
     cryptpass=sha256(password.encode('utf-8')).hexdigest()
     random.seed(int(cryptpass,16))
+    passmesh = meshmaker(cryptpass)
+    plainmesh = meshmaker(plaintext)
+    for i in range(8):
+        for j in range(8):
+            for k in range(8):
+                plainmesh[i][j]=xorutil(plainmesh[i][j],passmesh[i][k])
+            for k in range(8):
+                plainmesh[i][j]=xorutil(plainmesh[i][j],passmesh[k][j])
+    print(plaintext)
+    crypttext=""
+    for i in plainmesh:
+        for j in i:
+            crypttext+=str(j)
+    print(crypttext)
+    if(rounds>0):
+        return round(crypttext,cryptpass,rounds-1)
+    else:
+        return crypttext
+
+def encrypt(plaintext, password, rounds):
     out=""
-    passmesh = [[cryptpass[:8]],
-                [cryptpass[8:16]],
-                [cryptpass[16:24]],
-                [cryptpass[24:32]],
-                [cryptpass[32:40]],
-                [cryptpass[40:48]],
-                [cryptpass[48:56]],
-                [cryptpass[56:]],]
     while(len(plaintext)>64):
-        out+=encrypt(plaintext[:64],password,rounds)
+        out+=cryptoround(plaintext[:64],password,rounds)
         plaintext=plaintext[64:]
     while(len(plaintext)<64):
         plaintext=plaintext+random.randbytes(1).hex()
     while(len(plaintext)>64):
         plaintext=plaintext[:64]
-    plainmesh = [list(plaintext[i*8:(i+1)*8]) for i in range(8)]
-    for i in range(8):
-        for j in range(8):
-            print(plainmesh[i][j])
+    out+=cryptoround(plaintext, password, rounds)
     return "hello7cd5139d4a0a8e04a8ed6261d94124f34841e3ce0c8cf4c29467533acdc"
 
     
 
 encrypt("hello","Printme",5)
-

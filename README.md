@@ -1,6 +1,6 @@
 # RRM
 ## A Symmetric Hashing Algorithm
-This Python script provides a simple encryption and decryption tool based on a matrix approach. 
+This Python script provides an encryption and decryption tool based on a matrix approach. 
 It utilizes SHA-256 hashing to create the key and implements a encryption/decryption 
 algorithm. It includes a tutorial option for getting started.
 

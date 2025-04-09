@@ -1,4 +1,7 @@
 import random
+import os
+import base64
+import sys
 def meshmaker(inputstring):
     return [list(inputstring[i*8:(i+1)*8]) for i in range(8)]
 
@@ -91,3 +94,12 @@ def dsbox(inputstring, cryptpass):
         b = int(inputstring[i+1], 16)
         out += inv_sbox[a][b]
     return out
+
+def tutorial(input):
+    link=input
+    if sys.platform == "linux" or sys.platform == "linux2":
+        os.system("xdg-open " + link)
+    elif sys.platform == "darwin":
+        os.system("open "+link)
+    elif sys.platform == "win32":
+        os.system("start "+link)

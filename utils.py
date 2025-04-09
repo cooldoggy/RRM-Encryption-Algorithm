@@ -3,7 +3,29 @@ def meshmaker(inputstring):
 
 def xorutil(a, b):
     return a ^ b
-
+def generate_inverse_sbox(encrypt_table):
+    # Initialize a 10x10 decryption table with placeholders
+    decrypt_table = [[None for _ in range(10)] for _ in range(10)]
+    
+    # Populate the decryption table using the encryption table
+    for a in range(10):
+        for b in range(10):
+            encrypted_value = encrypt_table[a][b]
+            x = int(encrypted_value[0])  # First digit of the encrypted value
+            y = int(encrypted_value[1])  # Second digit of the encrypted value
+            
+            # Ensure the slot is empty (no duplicates)
+            if decrypt_table[x][y] is not None:
+                raise ValueError(f"Conflict at decrypt_table[{x}][{y}]")
+            decrypt_table[x][y] = f"{a:01d}{b:01d}"
+    
+    # Check for missing entries (incomplete inverse)
+    for x in range(10):
+        for y in range(10):
+            if decrypt_table[x][y] is None:
+                raise ValueError(f"Missing entry at decrypt_table[{x}][{y}]")
+    
+    return decrypt_table
 def substitutionboxencrypt(a, b):
     encrypttable = [
         ["97", "96", "42", "20", "36", "78", "16", "63", "11", "08"],
@@ -17,6 +39,8 @@ def substitutionboxencrypt(a, b):
         ["52", "27", "37", "88", "82", "51", "06", "55", "10", "33"],
         ["57", "07", "76", "50", "56", "31", "25", "74", "19", "79"]
     ]
+    #decrypt_table = generate_inverse_sbox(encrypttable)
+    #print(decrypt_table)
     return encrypttable[a][b]
 def substitutionboxdecrypt(a,b):
     decrypttable = [
@@ -58,3 +82,9 @@ def dsbox(inputstring):
             out += substitutionboxdecrypt(a, b)
             temp = ""
     return out
+
+for i in range(10):
+    for j in range(10):
+        #print(substitutionboxencrypt(i,j))
+        p=substitutionboxencrypt(i,j)
+        print(substitutionboxdecrypt(int(p[0]),int(p[1])))

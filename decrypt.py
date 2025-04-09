@@ -2,22 +2,37 @@ from hashlib import sha256
 from utils import meshmaker, xorutil, dsbox
 import random
 
-def decryptround(ciphertext, password, rounds):
+def xordecrypt(ciphertext, password):
+    # Create the mesh matrices for password and ciphertext
     passmesh = meshmaker(password)
-    # Reverse substitution first
-    out = dsbox(ciphertext)
-    plainmesh = meshmaker(out)
+    ciphermesh = meshmaker(ciphertext)
+    
+    # Iterate through the 8x8 grid and reverse the XOR operations
     for i in range(8):
         for j in range(8):
-            plainmesh[i][j] = int(plainmesh[i][j], 16)
-            # Reverse XOR order: columns first, then rows
+            # Convert the hex character into an integer
+            ciphermesh[i][j] = int(ciphermesh[i][j], 16)
+            
+            # Reverse Part 1: XOR with passmesh row
             for k in range(8):
-                plainmesh[i][j] = xorutil(plainmesh[i][j], int(passmesh[k][j], 16))
+                ciphermesh[i][j] = xorutil(ciphermesh[i][j], int(passmesh[i][k], 16))
+            
+            # Reverse Part 2: XOR with passmesh column
             for k in range(8):
-                plainmesh[i][j] = xorutil(plainmesh[i][j], int(passmesh[i][k], 16))
-            plainmesh[i][j] = format(plainmesh[i][j], 'x')
-    # Convert mesh back to string
-    out = ''.join([''.join(row) for row in plainmesh])
+                ciphermesh[i][j] = xorutil(ciphermesh[i][j], int(passmesh[k][j], 16))
+            
+            # Convert back to a single hex character
+            ciphermesh[i][j] = format(ciphermesh[i][j], 'x')
+    
+    # Convert the 8x8 grid back into a string
+    out = ''.join([''.join(row) for row in ciphermesh])
+    return out
+
+def decryptround(ciphertext, password, rounds):
+    
+    # Reverse substitution first
+    out = dsbox(ciphertext)
+    out=xordecrypt(out,password)
     if rounds > 0:
         return decrypt(out, password, rounds - 1, initial=False)
     else:

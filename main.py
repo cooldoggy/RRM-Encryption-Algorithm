@@ -1,7 +1,7 @@
 import hashlib
 import sys
-import encrypt
-import decrypt
+from encrypt import encrypt
+from decrypt import decrypt
 #plaintext matrix
 #SHA-256 sum on the password to make it 64 characters to put into a matrix
 def main():
@@ -35,4 +35,8 @@ def main():
     else:
         print("Invalid flag. Use -r for a tutorial.")
 
-main()
+#main()
+encrypted=(encrypt("hello", "Printme", 2))
+print(encrypted)
+decrypted=decrypt(encrypted,"Printme",2)
+print(decrypted)

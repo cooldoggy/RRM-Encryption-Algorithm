@@ -14,7 +14,7 @@ Erin Rodriguez
 *   **Decryption (-d):** Decrypts ciphertext using a SHA-256 hashed password.
 *   **Tutorial (-r):**  Displays a tutorial explaining the usage and basic concepts.
 *   **SHA-256 Hashing:**  Uses SHA-256 to derive the key from the password.
-*   **Matrix Based Encryption:**  Employs a simplified matrix-like approach.
+*   **Matrix Based Encryption:**  Employs a nonlinear matrix-like approach.
 
 ## Prerequisites
 

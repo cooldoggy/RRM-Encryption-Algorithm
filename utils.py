@@ -58,7 +58,6 @@ def dsbox(inputstring, cryptpass):
         out += inv_sbox[a][b]
     return out
 
-<<<<<<< HEAD
 def tutorial(input):
     link=input
     if sys.platform == "linux" or sys.platform == "linux2":
@@ -67,7 +66,6 @@ def tutorial(input):
         os.system("open "+link)
     elif sys.platform == "win32":
         os.system("start "+link)
-=======
 def xorutil(a, b):
     return a ^ b
 
@@ -121,4 +119,3 @@ def xordecrypt(ciphertext, password):
             ciphermesh[i][j] = format(ciphermesh[i][j], 'x')
     out = ''.join([''.join(row) for row in ciphermesh])
     return out
->>>>>>> 995a40353faf5b117c64164b050ea6b29c940a67

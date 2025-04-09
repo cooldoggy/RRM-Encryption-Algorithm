@@ -32,10 +32,13 @@ def encrypt(plaintext, password, rounds, initial=True):
         plaintext = plaintext[64:]
     # Pad remaining block if needed
     if len(plaintext) > 0:
-        padding_length = 64 - len(plaintext)
-        padding = random.randbytes(padding_length).hex()
-        plaintext += padding
-        plaintext = plaintext[:64]
-        encrypted_block = cryptoround(plaintext, cryptpass, rounds)
+        # Convert remaining hex chars back to bytes
+        remaining_bytes = bytes.fromhex(plaintext)
+        pad_len = 32 - len(remaining_bytes)  # 64 hex chars = 32 bytes
+        padded_bytes = remaining_bytes + bytes([pad_len] * pad_len)
+        padded_hex = padded_bytes.hex()
+
+        encrypted_block = cryptoround(padded_hex, cryptpass, rounds)
         out += encrypted_block
+
     return out

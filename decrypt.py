@@ -29,8 +29,11 @@ def decrypt(ciphertext, password, rounds, initial=True):
     out_bytes = bytes.fromhex(out)
     if out_bytes:
         pad_len = out_bytes[-1]
+        print(f"Padding length: {pad_len}")
+        # Check for padding and remove if it's correct
         if pad_len > 0 and pad_len <= 16 and all(b == pad_len for b in out_bytes[-pad_len:]):
             out_bytes = out_bytes[:-pad_len]
+        out_bytes = out_bytes.rstrip(b'\x0b')
     out = out_bytes.decode('utf-8', errors='ignore')
 
 

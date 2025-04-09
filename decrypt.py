@@ -7,7 +7,7 @@ import random
 def decryptround(ciphertext, password, rounds):
     
     # Reverse substitution first
-    out = dsbox(ciphertext)
+    out = dsbox(ciphertext,password)
     out=xordecrypt(out,password)
     if rounds > 0:
         return decryptround(out, password, rounds - 1,)

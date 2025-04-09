@@ -6,8 +6,7 @@ import random
 def cryptoround(plaintext, password, rounds):
     out = xorencrypt(plaintext,password)
     # Convert mesh back to string
-    
-    out = esbox(out)
+    out = esbox(out,password)
     if rounds > 0:
         return cryptoround(out, password, rounds - 1)
     else:

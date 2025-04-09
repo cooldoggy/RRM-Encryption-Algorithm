@@ -1,62 +1,24 @@
-import random
+import hmac
+import hashlib
+
 def meshmaker(inputstring):
     return [list(inputstring[i*8:(i+1)*8]) for i in range(8)]
 
-def xorutil(a, b):
-    return a ^ b
-
-def xorencrypt(plaintext, password):
-    passmesh = meshmaker(password)
-    plainmesh = meshmaker(plaintext)
-    for i in range(8):
-        for j in range(8):
-            plainmesh[i][j] = int(plainmesh[i][j], 16)
-            # Part 1: XOR with passmesh row
-            for k in range(8):
-                plainmesh[i][j] = xorutil(plainmesh[i][j], int(passmesh[i][k], 16))
-            # Part 2: XOR with passmesh column
-            for k in range(8):
-                plainmesh[i][j] = xorutil(plainmesh[i][j], int(passmesh[k][j], 16))
-            # Convert back to single hex character
-            plainmesh[i][j] = format(plainmesh[i][j], 'x')
-    out = ''.join([''.join(row) for row in plainmesh])
-    return out
-
-def xordecrypt(ciphertext, password):
-    # Create the mesh matrices for password and ciphertext
-    passmesh = meshmaker(password)
-    ciphermesh = meshmaker(ciphertext)
-    
-    # Iterate through the 8x8 grid and reverse the XOR operations
-    for i in range(8):
-        for j in range(8):
-            # Convert the hex character into an integer
-            ciphermesh[i][j] = int(ciphermesh[i][j], 16)
-            
-            # Reverse Part 1: XOR with passmesh row
-            for k in range(8):
-                ciphermesh[i][j] = xorutil(ciphermesh[i][j], int(passmesh[i][k], 16))
-            
-            # Reverse Part 2: XOR with passmesh column
-            for k in range(8):
-                ciphermesh[i][j] = xorutil(ciphermesh[i][j], int(passmesh[k][j], 16))
-            
-            # Convert back to a single hex character
-            ciphermesh[i][j] = format(ciphermesh[i][j], 'x')
-    
-    # Convert the 8x8 grid back into a string
-    out = ''.join([''.join(row) for row in ciphermesh])
-    return out
-
 def generate_dynamic_sbox(cryptpass):
-    """Generate a 16x16 key-dependent S-box using cryptpass."""
-    # Create a PRNG instance seeded with cryptpass to avoid interfering with global random
-    seed = int(cryptpass, 16)  # Convert hex string to integer
-    prng = random.Random(seed)
-    # Generate shuffled list of all 256 byte values (00 to FF)
+    """Generate a 16x16 key-dependent S-box using cryptpass securely."""
+    cryptpass_bytes = bytes.fromhex(cryptpass)
     sbox_entries = [format(i, '02x').upper() for i in range(256)]
-    prng.shuffle(sbox_entries)
-    # Convert to 16x16 grid
+    
+    # Use HMAC-SHA256 to generate deterministic secure randomness for shuffling
+    for i in range(255, 0, -1):
+        # Create HMAC using cryptpass as the key and index as the message
+        hmac_digest = hmac.new(cryptpass_bytes, i.to_bytes(4, 'big'), hashlib.sha256).digest()
+        # Convert digest to an integer and calculate j
+        j = int.from_bytes(hmac_digest, 'big') % (i + 1)
+        # Swap entries
+        sbox_entries[i], sbox_entries[j] = sbox_entries[j], sbox_entries[i]
+    
+    # Organize into 16x16 grid
     sbox_grid = [sbox_entries[i*16:(i+1)*16] for i in range(16)]
     return sbox_grid
 
@@ -90,4 +52,58 @@ def dsbox(inputstring, cryptpass):
         a = int(inputstring[i], 16)
         b = int(inputstring[i+1], 16)
         out += inv_sbox[a][b]
+    return out
+
+def xorutil(a, b):
+    return a ^ b
+
+def xorencrypt(plaintext, password):
+    passmesh = meshmaker(password)
+    plainmesh = meshmaker(plaintext)
+    # Generate dynamic S-box using the password (cryptpass)
+    sbox = generate_dynamic_sbox(password)
+    for i in range(8):
+        for j in range(8):
+            plainmesh[i][j] = int(plainmesh[i][j], 16)
+            # Part 1: XOR with S-box substituted passmesh row
+            for k in range(8):
+                pass_val = passmesh[i][k]  # 1 hex char (4-bit)
+                # Expand to a byte (e.g., 'a' -> 'aa') and substitute via S-box
+                substituted_byte = sbox[int(pass_val, 16)][int(pass_val, 16)]  # Use S-box lookup
+                substituted_value = int(substituted_byte, 16)
+                plainmesh[i][j] = xorutil(plainmesh[i][j], substituted_value)
+            # Part 2: XOR with S-box substituted passmesh column
+            for k in range(8):
+                pass_val = passmesh[k][j]
+                substituted_byte = sbox[int(pass_val, 16)][int(pass_val, 16)]
+                substituted_value = int(substituted_byte, 16)
+                plainmesh[i][j] = xorutil(plainmesh[i][j], substituted_value)
+            # Ensure value stays within 4-bit range (0-15)
+            plainmesh[i][j] = plainmesh[i][j] % 16
+            plainmesh[i][j] = format(plainmesh[i][j], 'x')
+    out = ''.join([''.join(row) for row in plainmesh])
+    return out
+
+def xordecrypt(ciphertext, password):
+    passmesh = meshmaker(password)
+    ciphermesh = meshmaker(ciphertext)
+    sbox = generate_dynamic_sbox(password)
+    for i in range(8):
+        for j in range(8):
+            ciphermesh[i][j] = int(ciphermesh[i][j], 16)
+            # Reverse Part 1: XOR with substituted passmesh row (same as encryption)
+            for k in range(8):
+                pass_val = passmesh[i][k]
+                substituted_byte = sbox[int(pass_val, 16)][int(pass_val, 16)]
+                substituted_value = int(substituted_byte, 16)
+                ciphermesh[i][j] = xorutil(ciphermesh[i][j], substituted_value)
+            # Reverse Part 2: XOR with substituted passmesh column
+            for k in range(8):
+                pass_val = passmesh[k][j]
+                substituted_byte = sbox[int(pass_val, 16)][int(pass_val, 16)]
+                substituted_value = int(substituted_byte, 16)
+                ciphermesh[i][j] = xorutil(ciphermesh[i][j], substituted_value)
+            ciphermesh[i][j] = ciphermesh[i][j] % 16
+            ciphermesh[i][j] = format(ciphermesh[i][j], 'x')
+    out = ''.join([''.join(row) for row in ciphermesh])
     return out

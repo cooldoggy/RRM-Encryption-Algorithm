@@ -3,88 +3,124 @@ def meshmaker(inputstring):
 
 def xorutil(a, b):
     return a ^ b
-def generate_inverse_sbox(encrypt_table):
-    # Initialize a 10x10 decryption table with placeholders
-    decrypt_table = [[None for _ in range(10)] for _ in range(10)]
+
+def xorencrypt(plaintext, password):
+    passmesh = meshmaker(password)
+    plainmesh = meshmaker(plaintext)
+    for i in range(8):
+        for j in range(8):
+            plainmesh[i][j] = int(plainmesh[i][j], 16)
+            # Part 1: XOR with passmesh row
+            for k in range(8):
+                plainmesh[i][j] = xorutil(plainmesh[i][j], int(passmesh[i][k], 16))
+            # Part 2: XOR with passmesh column
+            for k in range(8):
+                plainmesh[i][j] = xorutil(plainmesh[i][j], int(passmesh[k][j], 16))
+            # Convert back to single hex character
+            plainmesh[i][j] = format(plainmesh[i][j], 'x')
+    out = ''.join([''.join(row) for row in plainmesh])
+    return out
+
+def xordecrypt(ciphertext, password):
+    # Create the mesh matrices for password and ciphertext
+    passmesh = meshmaker(password)
+    ciphermesh = meshmaker(ciphertext)
     
-    # Populate the decryption table using the encryption table
-    for a in range(10):
-        for b in range(10):
-            encrypted_value = encrypt_table[a][b]
-            x = int(encrypted_value[0])  # First digit of the encrypted value
-            y = int(encrypted_value[1])  # Second digit of the encrypted value
+    # Iterate through the 8x8 grid and reverse the XOR operations
+    for i in range(8):
+        for j in range(8):
+            # Convert the hex character into an integer
+            ciphermesh[i][j] = int(ciphermesh[i][j], 16)
             
-            # Ensure the slot is empty (no duplicates)
-            if decrypt_table[x][y] is not None:
-                raise ValueError(f"Conflict at decrypt_table[{x}][{y}]")
-            decrypt_table[x][y] = f"{a:01d}{b:01d}"
+            # Reverse Part 1: XOR with passmesh row
+            for k in range(8):
+                ciphermesh[i][j] = xorutil(ciphermesh[i][j], int(passmesh[i][k], 16))
+            
+            # Reverse Part 2: XOR with passmesh column
+            for k in range(8):
+                ciphermesh[i][j] = xorutil(ciphermesh[i][j], int(passmesh[k][j], 16))
+            
+            # Convert back to a single hex character
+            ciphermesh[i][j] = format(ciphermesh[i][j], 'x')
     
-    # Check for missing entries (incomplete inverse)
-    for x in range(10):
-        for y in range(10):
-            if decrypt_table[x][y] is None:
-                raise ValueError(f"Missing entry at decrypt_table[{x}][{y}]")
-    
-    return decrypt_table
+    # Convert the 8x8 grid back into a string
+    out = ''.join([''.join(row) for row in ciphermesh])
+    return out
+
 def substitutionboxencrypt(a, b):
-    encrypttable = [
-        ["97", "96", "42", "20", "36", "78", "16", "63", "11", "08"],
-        ["13", "30", "68", "09", "95", "89", "05", "99", "65", "35"],
-        ["01", "44", "72", "46", "04", "71", "02", "22", "29", "90"],
-        ["61", "81", "62", "21", "34", "32", "73", "53", "45", "80"],
-        ["98", "49", "93", "41", "60", "64", "70", "47", "40", "69"],
-        ["87", "54", "24", "84", "18", "77", "66", "26", "38", "85"],
-        ["59", "43", "48", "91", "92", "00", "14", "58", "03", "75"],
-        ["28", "67", "17", "15", "83", "12", "94", "23", "39", "86"],
-        ["52", "27", "37", "88", "82", "51", "06", "55", "10", "33"],
-        ["57", "07", "76", "50", "56", "31", "25", "74", "19", "79"]
+    # 16x16 AES S-box
+    sbox = [
+        ["63", "7C", "77", "7B", "F2", "6B", "6F", "C5", "30", "01", "67", "2B", "FE", "D7", "AB", "76"],
+        ["CA", "82", "C9", "7D", "FA", "59", "47", "F0", "AD", "D4", "A2", "AF", "9C", "A4", "72", "C0"],
+        ["B7", "FD", "93", "26", "36", "3F", "F7", "CC", "34", "A5", "E5", "F1", "71", "D8", "31", "15"],
+        ["04", "C7", "23", "C3", "18", "96", "05", "9A", "07", "12", "80", "E2", "EB", "27", "B2", "75"],
+        ["09", "83", "2C", "1A", "1B", "6E", "5A", "A0", "52", "3B", "D6", "B3", "29", "E3", "2F", "84"],
+        ["53", "D1", "00", "ED", "20", "FC", "B1", "5B", "6A", "CB", "BE", "39", "4A", "4C", "58", "CF"],
+        ["D0", "EF", "AA", "FB", "43", "4D", "33", "85", "45", "F9", "02", "7F", "50", "3C", "9F", "A8"],
+        ["51", "A3", "40", "8F", "92", "9D", "38", "F5", "BC", "B6", "DA", "21", "10", "FF", "F3", "D2"],
+        ["CD", "0C", "13", "EC", "5F", "97", "44", "17", "C4", "A7", "7E", "3D", "64", "5D", "19", "73"],
+        ["60", "81", "4F", "DC", "22", "2A", "90", "88", "46", "EE", "B8", "14", "DE", "5E", "0B", "DB"],
+        ["E0", "32", "3A", "0A", "49", "06", "24", "5C", "C2", "D3", "AC", "62", "91", "95", "E4", "79"],
+        ["E7", "C8", "37", "6D", "8D", "D5", "4E", "A9", "6C", "56", "F4", "EA", "65", "7A", "AE", "08"],
+        ["BA", "78", "25", "2E", "1C", "A6", "B4", "C6", "E8", "DD", "74", "1F", "4B", "BD", "8B", "8A"],
+        ["70", "3E", "B5", "66", "48", "03", "F6", "0E", "61", "35", "57", "B9", "86", "C1", "1D", "9E"],
+        ["E1", "F8", "98", "11", "69", "D9", "8E", "94", "9B", "1E", "87", "E9", "CE", "55", "28", "DF"],
+        ["8C", "A1", "89", "0D", "BF", "E6", "42", "68", "41", "99", "2D", "0F", "B0", "54", "BB", "16"]
     ]
-    #decrypt_table = generate_inverse_sbox(encrypttable)
-    #print(decrypt_table)
-    return encrypttable[a][b]
-def substitutionboxdecrypt(a,b):
-    decrypttable = [
-    ['65', '20', '26', '68', '24', '16', '86', '91', '09', '13'], 
-    ['88', '08', '75', '10', '66', '73', '06', '72', '54', '98'], 
-    ['03', '33', '27', '77', '52', '96', '57', '81', '70', '28'], 
-    ['11', '95', '35', '89', '34', '19', '04', '82', '58', '78'], 
-    ['48', '43', '02', '61', '21', '38', '23', '47', '62', '41'], 
-    ['93', '85', '80', '37', '51', '87', '94', '90', '67', '60'], 
-    ['44', '30', '32', '07', '45', '18', '56', '71', '12', '49'], 
-    ['46', '25', '22', '36', '97', '69', '92', '55', '05', '99'], 
-    ['39', '31', '84', '74', '53', '59', '79', '50', '83', '15'], 
-    ['29', '63', '64', '42', '76', '14', '01', '00', '40', '17']
+    return sbox[a][b]
+
+
+def substitutionboxdecrypt(a, b):
+    # 16x16 AES Inverse S-box
+    inv_sbox = [
+        ["52", "09", "6A", "D5", "30", "36", "A5", "38", "BF", "40", "A3", "9E", "81", "F3", "D7", "FB"],
+        ["7C", "E3", "39", "82", "9B", "2F", "FF", "87", "34", "8E", "43", "44", "C4", "DE", "E9", "CB"],
+        ["54", "7B", "94", "32", "A6", "C2", "23", "3D", "EE", "4C", "95", "0B", "42", "FA", "C3", "4E"],
+        ["08", "2E", "A1", "66", "28", "D9", "24", "B2", "76", "5B", "A2", "49", "6D", "8B", "D1", "25"],
+        ["72", "F8", "F6", "64", "86", "68", "98", "16", "D4", "A4", "5C", "CC", "5D", "65", "B6", "92"],
+        ["6C", "70", "48", "50", "FD", "ED", "B9", "DA", "5E", "15", "46", "57", "A7", "8D", "9D", "84"],
+        ["90", "D8", "AB", "00", "8C", "BC", "D3", "0A", "F7", "E4", "58", "05", "B8", "B3", "45", "06"],
+        ["D0", "2C", "1E", "8F", "CA", "3F", "0F", "02", "C1", "AF", "BD", "03", "01", "13", "8A", "6B"],
+        ["3A", "91", "11", "41", "4F", "67", "DC", "EA", "97", "F2", "CF", "CE", "F0", "B4", "E6", "73"],
+        ["96", "AC", "74", "22", "E7", "AD", "35", "85", "E2", "F9", "37", "E8", "1C", "75", "DF", "6E"],
+        ["47", "F1", "1A", "71", "1D", "29", "C5", "89", "6F", "B7", "62", "0E", "AA", "18", "BE", "1B"],
+        ["FC", "56", "3E", "4B", "C6", "D2", "79", "20", "9A", "DB", "C0", "FE", "78", "CD", "5A", "F4"],
+        ["1F", "DD", "A8", "33", "88", "07", "C7", "31", "B1", "12", "10", "59", "27", "80", "EC", "5F"],
+        ["60", "51", "7F", "A9", "19", "B5", "4A", "0D", "2D", "E5", "7A", "9F", "93", "C9", "9C", "EF"],
+        ["A0", "E0", "3B", "4D", "AE", "2A", "F5", "B0", "C8", "EB", "BB", "3C", "83", "53", "99", "61"],
+        ["17", "2B", "04", "7E", "BA", "77", "D6", "26", "E1", "69", "14", "63", "55", "21", "0C", "7D"]
     ]
-    return decrypttable[a][b]
+    return inv_sbox[a][b]
 
 
 def esbox(inputstring):
-    temp = ""
+    """Encrypt the input hex string using the S-box.
+
+    The input string should consist of an even number of hex digits.  
+    This function processes the input in groups of two hex digits.
+    """
     out = ""
-    for i in inputstring:
-        temp += i
-        if len(temp) == 2:
-            a = int(temp[0], 16) % 10
-            b = int(temp[1], 16) % 10
-            out += substitutionboxencrypt(a, b)
-            temp = ""
+    # Process each pair of hex characters
+    for i in range(0, len(inputstring), 2):
+        digit1 = inputstring[i]
+        digit2 = inputstring[i + 1]
+        a = int(digit1, 16)  # Use full hex value (0–15)
+        b = int(digit2, 16)
+        out += substitutionboxencrypt(a, b)
     return out
 
 
 def dsbox(inputstring):
-    temp = ""
-    out = ""
-    for i in inputstring:
-        temp += i
-        if len(temp) == 2:
-            a = int(temp[0], 16) % 10
-            b = int(temp[1], 16) % 10
-            out += substitutionboxdecrypt(a, b)
-            temp = ""
-    return out
+    """Decrypt the input hex string using the inverse S-box.
 
-for i in range(10):
-    for j in range(10):
-        #print(substitutionboxencrypt(i,j))
-        p=substitutionboxencrypt(i,j)
-        print(substitutionboxdecrypt(int(p[0]),int(p[1])))
+    The input string should have an even number of hex digits.
+    This function processes the input in groups of two hex digits.
+    """
+    out = ""
+    for i in range(0, len(inputstring), 2):
+        digit1 = inputstring[i]
+        digit2 = inputstring[i + 1]
+        a = int(digit1, 16)
+        b = int(digit2, 16)
+        out += substitutionboxdecrypt(a, b)
+    return out

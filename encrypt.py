@@ -1,22 +1,7 @@
 from hashlib import sha256
-from utils import meshmaker, xorutil, esbox
+from utils import xorencrypt, esbox
 import random
-def xorencrypt(plaintext, password):
-    passmesh = meshmaker(password)
-    plainmesh = meshmaker(plaintext)
-    for i in range(8):
-        for j in range(8):
-            plainmesh[i][j] = int(plainmesh[i][j], 16)
-            # Part 1: XOR with passmesh row
-            for k in range(8):
-                plainmesh[i][j] = xorutil(plainmesh[i][j], int(passmesh[i][k], 16))
-            # Part 2: XOR with passmesh column
-            for k in range(8):
-                plainmesh[i][j] = xorutil(plainmesh[i][j], int(passmesh[k][j], 16))
-            # Convert back to single hex character
-            plainmesh[i][j] = format(plainmesh[i][j], 'x')
-    out = ''.join([''.join(row) for row in plainmesh])
-    return out
+
 
 def cryptoround(plaintext, password, rounds):
     out = xorencrypt(plaintext,password)

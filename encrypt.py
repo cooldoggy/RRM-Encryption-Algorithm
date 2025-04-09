@@ -21,7 +21,6 @@ def encrypt(plaintext, password, rounds, initial=True):
         plaintext_bytes += bytes([pad_len] * pad_len)
         plaintext = plaintext_bytes.hex()
     # Process blocks
-    random.seed(int(cryptpass, 16))
     out = ""
     # Split into 64-character blocks (32 bytes)
     while len(plaintext) >= 64:

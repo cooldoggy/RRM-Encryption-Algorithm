@@ -2,15 +2,15 @@ from hashlib import sha256
 from utils import xorencrypt, esbox
 import random
 
-
-def cryptoround(plaintext, password, rounds):
-    out = xorencrypt(plaintext,password)
-    # Convert mesh back to string
-    out = esbox(out,password)
-    if rounds > 0:
-        return cryptoround(out, password, rounds - 1)
-    else:
-        return out
+def cryptoround(plaintext, initial_key, rounds):
+    current_key = initial_key
+    out = plaintext
+    for _ in range(rounds):
+        out = xorencrypt(out, current_key)
+        out = esbox(out, current_key)
+        # Derive next key using SHA-256
+        current_key = sha256(current_key.encode('utf-8')).hexdigest()
+    return out
 
 def encrypt(plaintext, password, rounds, initial=True):
     cryptpass = sha256(password.encode('utf-8')).hexdigest()
@@ -31,13 +31,10 @@ def encrypt(plaintext, password, rounds, initial=True):
         plaintext = plaintext[64:]
     # Pad remaining block if needed
     if len(plaintext) > 0:
-        # Convert remaining hex chars back to bytes
         remaining_bytes = bytes.fromhex(plaintext)
-        pad_len = 32 - len(remaining_bytes)  # 64 hex chars = 32 bytes
+        pad_len = 32 - len(remaining_bytes)
         padded_bytes = remaining_bytes + bytes([pad_len] * pad_len)
         padded_hex = padded_bytes.hex()
-
         encrypted_block = cryptoround(padded_hex, cryptpass, rounds)
         out += encrypted_block
-
     return out

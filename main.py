@@ -2,10 +2,11 @@ import hashlib
 import sys
 from encrypt import encrypt
 from decrypt import decrypt
+sys.setrecursionlimit(4096)
 #plaintext matrix
 #SHA-256 sum on the password to make it 64 characters to put into a matrix
 def main():
-    rounds = 0
+    rounds = 2048
     if(len(sys.argv)<5):
         print("Not enough arguments\n"
             "Usage:\t main.py -e [8 char plaintext] [password] [Encryption Rounds]\n"
@@ -19,25 +20,17 @@ def main():
     except:
         print("Please specify the number of encryption rounds.\n")
     if(sys.argv[1]=="-e"):
-        #encrypted = encrypt.encrypt(str(sys.argv[2]), str(sys.argv[3]), rounds)
-        #print(encrypted)
+        encrypted = encrypt(str(sys.argv[2]), str(sys.argv[3]), rounds)
+        print(encrypted)
         return
     elif(sys.argv[1]=="-d"):
-        if(len(sys.argv[2])>16):
-            print("Ciphertext too long, should be 8 characters long\n")
-            return
-        if(len(sys.argv[2])<16):
-            print("Ciphertext too short, should be 8 characters long\n")
-            return
-        #decrypted = decrypt.decrypt(str(sys.argv[2]), str(sys.argv[3]), rounds)
-        #print(decrypted)
+        decrypted = decrypt(str(sys.argv[2]), str(sys.argv[3]), rounds)
+        print(decrypted)
         return
+    elif(sys.argv[1]=="-r"):
+        #rick
+        pass
     else:
         print("Invalid flag. Use -r for a tutorial.")
-
-#main()
-encrypted=(encrypt("hello", "Printme", 2))
-print(encrypted)
-decrypted=decrypt(encrypted,"Printme",2)
-print(decrypted)
-print(decrypted.encode("utf-8"))
+        
+main()

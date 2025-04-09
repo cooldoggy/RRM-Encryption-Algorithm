@@ -36,8 +36,11 @@ def main():
         print("Invalid flag. Use -r for a tutorial.")
 
 #main()
-encrypted=(encrypt("hello", "Printme", 2))
+import sys
+sys.setrecursionlimit(4096)
+encrypted=(encrypt("hello", "Printme", 2048))
 print(encrypted)
-decrypted=decrypt(encrypted,"Printme",2)
+decrypted=decrypt(encrypted,"Printme",2048)
 print(decrypted)
 print(decrypted.encode("utf-8"))
+sys.setrecursionlimit(1000)
